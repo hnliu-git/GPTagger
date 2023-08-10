@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "GPTagger"
+version = "0.1.0"
+description = "General Purpose Tagger"
+authors = ["Haonan Liu <haonan.liu.edu@gmail.com>"]
+readme = "README.md"
+packages = [{include = "GPTagger"}]
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+langchain = "^0.0.222"
+fuzzywuzzy = "^0.18.0"
+tqdm = "^4.65.0"
+tiktoken = "^0.4.0"
+openai = "^0.27.8"
+python-levenshtein = "^0.21.1"
+wasabi = "^1.1.2"
+jinja2 = "^3.1.2"
+gradio = "^3.38.0"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+black = "^23.3.0"
+pytest-cov = "^4.1.0"
+coverage-badge = "^1.1.0"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

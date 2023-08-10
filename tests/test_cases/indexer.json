@@ -1,0 +1,30 @@
+{
+    "multiple-line": {
+        "text": "32\n\n19,00 €  \nper hour\n\nfrom - 30.11.2023",
+        "input": "19,00 € per hour",
+        "output": [
+            "19,00 €  \nper hour"
+        ]
+    },
+    "regex-escape": {
+        "text": "There are many countries in the world including America(US), Germany",
+        "input": "America(US)",
+        "output": [
+            "America(US),"
+        ]
+    },
+    "bad-first-token": {
+        "text": "Thera are Hour24 in a sunny day and 1 hour more",
+        "input": "24 in a sunny day",
+        "output": [
+            "Hour24 in a sunny day"
+        ]
+    },
+    "multiple-matches": {
+        "text": "We should have match 1 match 2 match 3 match 4 and so on",
+        "input": "match",
+        "output": [
+            "match", "match", "match", "match" 
+        ]
+    }
+}
