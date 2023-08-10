@@ -44,7 +44,7 @@ def ner(
     return {"text": text, "entities": output}
 
 
-with gr.Blocks() as demo:
+with gr.Blocks(theme=gr.themes.Default(text_size=gr.themes.sizes.text_lg)) as demo:
     with gr.Row():
         tag_name = gr.Textbox(label="tag name")
         tag_max_len = gr.Slider(

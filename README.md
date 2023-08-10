@@ -22,10 +22,14 @@ GPT: "$1,000"
 
 ## Introduction
 
+![GPTagger Demo](res/GPTagger%20demo.gif)
+
 These incorrect responses highlight the importance of using a reliable tag extraction tool like GPT Tagger. To do that, GPT Tagger follows a set of main steps:
 1. 🕵️‍♀️ Extraction: GPT Tagger sniffs out all possible tags by following your instructions to GPT.
 2. 🔍 Indexing: It spots the exact locations of these tags within the text.
 3. ✅ Validator: GPT Tagger's trusty validator steps in to validate if the extracted tags pass the rule-based and ML-based checks.
+
+Check the example above how we extract ingredients from a yummy recipe text. 😋
 
 ## Features ✨
 
@@ -74,3 +78,5 @@ tags = pipeline(doc, prompt)
 ### Build Custom Pipelines 🎉
 
 We believe that the possibilities of using GPT as a text tagger are endless! We invite you to contribute your own custom pipelines. Together, we'll unlock the true potential of GPT Tagger and make text tagging an better experience.
+
+Leave a star if you find GPTagger is useful for your product or company! 🌟
