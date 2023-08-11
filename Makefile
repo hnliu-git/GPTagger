@@ -1,4 +1,5 @@
 MODULE_FOLDER := GPTagger
+MODULE_VERSION := $(shell git tag | sort -V | tail -1)
 
 init: pyproject.toml
 	pip install --upgrade pip
@@ -19,3 +20,11 @@ analysis: install
 tidy: install
 		poetry run black --preview $(MODULE_FOLDER)
 		poetry run black --preview tests
+
+build: init
+		sed -i '' "s/version = \"0.0.0\"/version = \"$(MODULE_VERSION)\"/g" pyproject.toml
+		poetry version $(MODULE_VERSION)
+		poetry build
+
+publish: build
+		poetry publish

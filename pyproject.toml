@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "GPTagger"
-version = "0.1.0"
-description = "General Purpose Tagger"
+version = "v0.0.1"
+description = "General Purpose Tagger using GPT"
 authors = ["Haonan Liu <haonan.liu.edu@gmail.com>"]
 readme = "README.md"
 packages = [{include = "GPTagger"}]
