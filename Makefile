@@ -25,6 +25,3 @@ build: init
 		sed -i '' "s/version = \"0.0.0\"/version = \"$(MODULE_VERSION)\"/g" pyproject.toml
 		poetry version $(MODULE_VERSION)
 		poetry build
-
-publish: build
-		poetry publish
