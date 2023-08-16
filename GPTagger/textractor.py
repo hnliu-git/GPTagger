@@ -7,7 +7,7 @@ from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
-from langchain.tools import format_tool_to_openai_function, tool
+from langchain.tools.convert_to_openai import FunctionDescription
 
 from GPTagger.logger import log2cons
 from GPTagger.constants import model2ctxlen
@@ -21,11 +21,12 @@ class Extractions(BaseModel):
         )
     )
 
-
-@tool(args_schema=Extractions)
-def process_extractions(texts: List[str]):
-    """Process the list of extracted text"""
-    return texts
+def prepare_tool_function():
+    return FunctionDescription(
+        name='process_extractions',
+        description='process_extractions(texts: List[str]) - Process the list of extracted text',
+        parameters=Extractions.schema()
+    )
 
 
 class Textractor:
@@ -69,7 +70,7 @@ class Textractor:
             # The function_call param is very important to restrict the model to only call this function
             msg = self.model.predict_messages(
                 [HumanMessage(content=prompt)],
-                functions=[format_tool_to_openai_function(process_extractions)],
+                functions=[prepare_tool_function()],
                 function_call={"name": "process_extractions"},
             )
             function_call = msg.additional_kwargs["function_call"]
