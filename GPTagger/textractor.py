@@ -56,9 +56,9 @@ class Textractor:
         """Textractor request gpt to get extractions
 
         Args:
+            tag_names (List[str]): list of tag names that need to be tagged in the text.
             model (str, optional): the used GPT model. Defaults to "gpt-3.5-turbo-0613".
             num_of_calls (int, optional): number of calls. Defaults to 1.
-            use_tool (bool, optional): use functional call feature or not. Defaults to True.
             max_new_tokens (int, optional): max length of generated token. Defaults to 256.
 
         """
@@ -82,14 +82,15 @@ class Textractor:
         Returns:
             List[str]: list of extractions
         """
+        tag_name = self.tag_names[0]
         # The function_call param is very important to restrict the model to only call this function
         msg = self.model.predict_messages(
             [HumanMessage(content=prompt)],
-            functions=[prepare_tool_function()],
-            function_call={"name": "process_salary_extractions"},
+            functions=[prepare_tool_function(tag_name)],
+            function_call={"name": "process_%s_extractions" % (tag_name)},
         )
         function_call = msg.additional_kwargs["function_call"]
-        texts = json.loads(function_call["arguments"])["salary"]
+        texts = json.loads(function_call["arguments"])[tag_name]
         if isinstance(texts, str):
             texts = texts.split("\n")
 
