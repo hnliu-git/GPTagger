@@ -1,40 +1,56 @@
 import json
 import tiktoken
 
-from typing import List
+from typing import List, TypedDict
 from pydantic import BaseModel, Field
 from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
-from langchain.tools.convert_to_openai import FunctionDescription
 
 from GPTagger.logger import log2cons
 from GPTagger.constants import model2ctxlen
 
 
+class FunctionDescription(TypedDict):
+    """Representation of a callable function to the OpenAI API."""
+
+    name: str
+    """The name of the function."""
+    description: str
+    """A description of the function."""
+    parameters: dict
+    """The parameters of the function."""
+
+
 # The schema seems to be very important
 class Extractions(BaseModel):
-    texts: List[str] = Field(
+    salary: List[str] = Field(
         description=(
-            "List of strings extracted from the text according to the instructions"
+            "List of salary strings extracted from the text according to the"
+            " instructions"
         )
     )
 
-def prepare_tool_function():
+
+def prepare_tool_function(tag_name: str) -> FunctionDescription:
     return FunctionDescription(
-        name='process_extractions',
-        description='process_extractions(texts: List[str]) - Process the list of extracted text',
-        parameters=Extractions.schema()
+        name="process_%s_extractions" % tag_name,
+        description=(
+            "process_%s_extractions(%s: List[str]) - Process the list of extracted %s"
+            " strings"
+        )
+        % (tag_name, tag_name, tag_name),
+        parameters=Extractions.schema(),
     )
 
 
 class Textractor:
     def __init__(
         self,
+        tag_names: List[str],
         model: str = "gpt-3.5-turbo-0613",
         num_of_calls: int = 1,
-        use_tool: bool = True,
         max_new_tokens: int = 256,
     ):
         """Textractor request gpt to get extractions
@@ -49,7 +65,7 @@ class Textractor:
         if model not in model2ctxlen:
             raise ValueError(f"Unsupported model name {model}")
         # model setup
-        self.use_tool = use_tool
+        self.tag_names = tag_names
         self.num_of_calls = num_of_calls
         self.limit = model2ctxlen[model]
         self.model = ChatOpenAI(model=model, max_tokens=max_new_tokens)
@@ -66,26 +82,16 @@ class Textractor:
         Returns:
             List[str]: list of extractions
         """
-        if self.use_tool:
-            # The function_call param is very important to restrict the model to only call this function
-            msg = self.model.predict_messages(
-                [HumanMessage(content=prompt)],
-                functions=[prepare_tool_function()],
-                function_call={"name": "process_extractions"},
-            )
-            function_call = msg.additional_kwargs["function_call"]
-            texts = json.loads(function_call["arguments"])["texts"]
-            if isinstance(texts, str):
-                texts = texts.split("\n")
-        else:
-            # Either the content is json or it should be multiple line content
-            msg = self.model.predict_messages([HumanMessage(content=prompt)])
-            try:
-                texts = json.loads(msg.content)["texts"]
-                if isinstance(texts, str):
-                    texts = texts.split("\n")
-            except:
-                texts = msg.content.split("\n")
+        # The function_call param is very important to restrict the model to only call this function
+        msg = self.model.predict_messages(
+            [HumanMessage(content=prompt)],
+            functions=[prepare_tool_function()],
+            function_call={"name": "process_salary_extractions"},
+        )
+        function_call = msg.additional_kwargs["function_call"]
+        texts = json.loads(function_call["arguments"])["salary"]
+        if isinstance(texts, str):
+            texts = texts.split("\n")
 
         return texts
 

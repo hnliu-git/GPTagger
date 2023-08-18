@@ -78,7 +78,9 @@ class NerPipeline:
     def add_validator(self, validator: BaseValidator):
         self.validators.append(validator)
 
-    def __call__(self, text: str, template: PromptTemplate, fname: str = None) -> List[Tag]:
+    def __call__(
+        self, text: str, template: PromptTemplate, fname: str = None
+    ) -> List[Tag]:
         # Step 1. Extraction
         extractions = self.textractor(text, template)
         tags = self.indexer.index(extractions, text, fname)
