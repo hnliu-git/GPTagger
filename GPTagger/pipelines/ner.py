@@ -17,7 +17,6 @@ class NerConfig:
     tag_name: str
     # tagger cfgs
     nr_calls: int = 1
-    use_tool: bool = True
     model: str = "gpt-3.5-turbo-0613"
     # indexer cfgs
     token_threshold: int = 80
@@ -39,7 +38,6 @@ class NerPipeline:
         self,
         tag_name: str,
         nr_calls: int = 1,
-        use_tool: bool = True,
         model: str = "gpt-3.5-turbo",
         token_threshold: int = 80,
         phrase_threshold: int = 85,
@@ -53,8 +51,8 @@ class NerPipeline:
         self.export_dir = export_dir
 
         self.textractor = Textractor(
+            tag_names=[tag_name],
             model=model,
-            use_tool=use_tool,
             num_of_calls=nr_calls,
         )
 
@@ -78,7 +76,9 @@ class NerPipeline:
     def add_validator(self, validator: BaseValidator):
         self.validators.append(validator)
 
-    def __call__(self, text: str, template: PromptTemplate, fname: str = None) -> List[Tag]:
+    def __call__(
+        self, text: str, template: PromptTemplate, fname: str = None
+    ) -> List[Tag]:
         # Step 1. Extraction
         extractions = self.textractor(text, template)
         tags = self.indexer.index(extractions, text, fname)

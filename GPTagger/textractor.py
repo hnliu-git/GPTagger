@@ -1,54 +1,71 @@
 import json
 import tiktoken
 
-from typing import List
-from pydantic import BaseModel, Field
+from typing import List, TypedDict, Dict
+from pydantic import BaseModel, Field, create_model
 from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
-from langchain.tools import format_tool_to_openai_function, tool
 
 from GPTagger.logger import log2cons
 from GPTagger.constants import model2ctxlen
 
 
-# The schema seems to be very important
-class Extractions(BaseModel):
-    texts: List[str] = Field(
+class FunctionDescription(TypedDict):
+    """Representation of a callable function to the OpenAI API."""
+
+    name: str
+    """The name of the function."""
+    description: str
+    """A description of the function."""
+    parameters: dict
+    """The parameters of the function."""
+
+
+def generate_data_model(tag_names: List[str]) -> BaseModel:
+
+    definitions = {}
+
+    for tag in tag_names:
+        definitions[tag] = (List[str], Field(..., description="List of %s strings extracted from the text according to the instructions."))
+    
+    return create_model('Extractions', **definitions).schema_json()
+
+
+def prepare_tool_functions(tag_names: List[str]) -> List[FunctionDescription]:
+    params = ','.join(['%s: List[str]'%tag for tag in tag_names])
+    return FunctionDescription(
+        name="process_extractions",
         description=(
-            "List of strings extracted from the text according to the instructions"
+            "process_extractions(%s) - Process different kinds of extractions"
         )
+        % (params),
+        parameters=generate_data_model(tag_names).schema()
     )
-
-
-@tool(args_schema=Extractions)
-def process_extractions(texts: List[str]):
-    """Process the list of extracted text"""
-    return texts
 
 
 class Textractor:
     def __init__(
         self,
+        tag_names: List[str],
         model: str = "gpt-3.5-turbo-0613",
         num_of_calls: int = 1,
-        use_tool: bool = True,
         max_new_tokens: int = 256,
     ):
         """Textractor request gpt to get extractions
 
         Args:
+            tag_names (List[str]): list of tag names that need to be tagged in the text.
             model (str, optional): the used GPT model. Defaults to "gpt-3.5-turbo-0613".
             num_of_calls (int, optional): number of calls. Defaults to 1.
-            use_tool (bool, optional): use functional call feature or not. Defaults to True.
             max_new_tokens (int, optional): max length of generated token. Defaults to 256.
 
         """
         if model not in model2ctxlen:
             raise ValueError(f"Unsupported model name {model}")
         # model setup
-        self.use_tool = use_tool
+        self.tag_names = tag_names
         self.num_of_calls = num_of_calls
         self.limit = model2ctxlen[model]
         self.model = ChatOpenAI(model=model, max_tokens=max_new_tokens)
@@ -65,26 +82,17 @@ class Textractor:
         Returns:
             List[str]: list of extractions
         """
-        if self.use_tool:
-            # The function_call param is very important to restrict the model to only call this function
-            msg = self.model.predict_messages(
-                [HumanMessage(content=prompt)],
-                functions=[format_tool_to_openai_function(process_extractions)],
-                function_call={"name": "process_extractions"},
-            )
-            function_call = msg.additional_kwargs["function_call"]
-            texts = json.loads(function_call["arguments"])["texts"]
-            if isinstance(texts, str):
-                texts = texts.split("\n")
-        else:
-            # Either the content is json or it should be multiple line content
-            msg = self.model.predict_messages([HumanMessage(content=prompt)])
-            try:
-                texts = json.loads(msg.content)["texts"]
-                if isinstance(texts, str):
-                    texts = texts.split("\n")
-            except:
-                texts = msg.content.split("\n")
+        tag_name = self.tag_names[0]
+        # The function_call param is very important to restrict the model to only call this function
+        msg = self.model.predict_messages(
+            [HumanMessage(content=prompt)],
+            functions=prepare_tool_functions(self.tag_names),
+            function_call={"name": "process_%s_extractions" % (tag_name)},
+        )
+        function_call = msg.additional_kwargs["function_call"]
+        texts = json.loads(function_call["arguments"])[tag_name]
+        if isinstance(texts, str):
+            texts = texts.split("\n")
 
         return texts
 

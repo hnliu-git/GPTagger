@@ -7,8 +7,8 @@ from langchain.prompts import PromptTemplate
 
 
 class BaseTemplate:
-    """A class that may or may not help you with prompt versioning
-    """
+    """A class that may or may not help you with prompt versioning"""
+
     def __init__(
         self,
         name: str,

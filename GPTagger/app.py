@@ -14,6 +14,7 @@ TEXT:
 \"\"\"
 """
 
+
 def ner(
     model: str,
     nr_call: int,
