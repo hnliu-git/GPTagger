@@ -1,8 +1,8 @@
 import json
 import tiktoken
 
-from typing import List, TypedDict
-from pydantic import BaseModel, Field
+from typing import List, TypedDict, Dict
+from pydantic import BaseModel, Field, create_model
 from langchain.schema import HumanMessage
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
@@ -23,25 +23,25 @@ class FunctionDescription(TypedDict):
     """The parameters of the function."""
 
 
-# The schema seems to be very important
-class Extractions(BaseModel):
-    salary: List[str] = Field(
-        description=(
-            "List of salary strings extracted from the text according to the"
-            " instructions"
-        )
-    )
+def generate_data_model(tag_names: List[str]) -> BaseModel:
+
+    definitions = {}
+
+    for tag in tag_names:
+        definitions[tag] = (List[str], Field(..., description="List of %s strings extracted from the text according to the instructions."))
+    
+    return create_model('Extractions', **definitions).schema_json()
 
 
-def prepare_tool_function(tag_name: str) -> FunctionDescription:
+def prepare_tool_functions(tag_names: List[str]) -> List[FunctionDescription]:
+    params = ','.join(['%s: List[str]'%tag for tag in tag_names])
     return FunctionDescription(
-        name="process_%s_extractions" % tag_name,
+        name="process_extractions",
         description=(
-            "process_%s_extractions(%s: List[str]) - Process the list of extracted %s"
-            " strings"
+            "process_extractions(%s) - Process different kinds of extractions"
         )
-        % (tag_name, tag_name, tag_name),
-        parameters=Extractions.schema(),
+        % (params),
+        parameters=generate_data_model(tag_names).schema()
     )
 
 
@@ -86,7 +86,7 @@ class Textractor:
         # The function_call param is very important to restrict the model to only call this function
         msg = self.model.predict_messages(
             [HumanMessage(content=prompt)],
-            functions=[prepare_tool_function(tag_name)],
+            functions=prepare_tool_functions(self.tag_names),
             function_call={"name": "process_%s_extractions" % (tag_name)},
         )
         function_call = msg.additional_kwargs["function_call"]
